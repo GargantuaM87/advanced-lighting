@@ -10,7 +10,6 @@ struct Material {
     sampler2D texture_normal1;
     sampler2D texture_height1;
     float shininess;
-
 };
 uniform Material u_mat;
 
@@ -21,7 +20,6 @@ struct DirLight {
     vec3 diffuse;
     vec3 specular;
 };
-uniform DirLight dirLight;
 
 struct PointLight {
     vec3 position;
@@ -34,7 +32,13 @@ struct PointLight {
     vec3 diffuse;
     vec3 specular;
 };
-uniform PointLight pointLight;
+
+// 140 bytes in total
+layout (std140) uniform Lights
+{
+    PointLight pointLight; // 76 bytes for each PointLight
+    DirLight dirLight; // 64 bytes for each DirLight
+};
 
 uniform vec3 u_viewPos;
 

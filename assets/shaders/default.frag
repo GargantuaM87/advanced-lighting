@@ -43,17 +43,12 @@ struct SpotLight
     vec3 diffuse;
     vec3 specular;
 };
-// 128 bytes for vecs
-/*layout (std140) uniform Lights
+// 140 bytes in total
+layout (std140) uniform Lights
 {
-    #define NUM_POINT_LIGHTS 1
-    PointLight u_pointLights[NUM_POINT_LIGHTS];
-    DirectionalLight u_dirLight;
-};*/
-
-#define NUM_POINT_LIGHTS 1
-uniform PointLight u_pointLights[NUM_POINT_LIGHTS];
-uniform DirectionalLight u_dirLight;
+    PointLight u_pointLights; // 76 bytes for each PointLight
+    DirectionalLight u_dirLight; // 64 bytes for each DirLight
+};
 uniform SpotLight u_spotLight;
 uniform Material u_mat;
 uniform vec3 u_viewPos;
@@ -72,9 +67,8 @@ void main()
    
    
    vec3 result = CalcDirLight(u_dirLight, norm, viewDir);
-   for(int i = 0; i < 1; i++) {
-         result += CalcPointLight(u_pointLights[i], norm, FragPos, viewDir);
-   }
+   result += CalcPointLight(u_pointLights, norm, FragPos, viewDir);
+   
   
    //result += CalcSpotLight(u_spotLight, norm, FragPos, viewDir);
 
