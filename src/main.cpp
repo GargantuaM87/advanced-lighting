@@ -77,14 +77,14 @@ int main(int, char **)
              -0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f};
 
      float planeVertices[] = {
-        // positions          // texture Coords 
-         5.0f, -0.5f,  5.0f,  
-        -5.0f, -0.5f,  5.0f,  
-        -5.0f, -0.5f, -5.0f,  
+       // positions           // texture Coords 
+         5.0f, -0.5f,  5.0f,  2.0f, 0.0f,
+        -5.0f, -0.5f,  5.0f,  0.0f, 0.0f,
+        -5.0f, -0.5f, -5.0f,  0.0f, 2.0f,
 
-         5.0f, -0.5f,  5.0f,  
-        -5.0f, -0.5f, -5.0f,  
-         5.0f, -0.5f, -5.0f, 
+         5.0f, -0.5f,  5.0f,  2.0f, 0.0f,
+        -5.0f, -0.5f, -5.0f,  0.0f, 2.0f,
+         5.0f, -0.5f, -5.0f,  2.0f, 2.0f
     };
 
      float quadVertices[] = {
@@ -123,7 +123,8 @@ int main(int, char **)
      Shader modelShader("../assets/shaders/model.vert", "../assets/shaders/model.frag");
      Shader depthShader("../assets/shaders/simpleDepthShader.vert", "../assets/shaders/simpleDepthShader.frag");
      Shader framebufferShader("../assets/shaders/framebuffer.vert", "../assets/shaders/framebuffer.frag");
-     
+     Shader shadowShader("../assets/shaders/shadow.vert", "../assets/shaders/shadow.frag");
+
      Model model("../assets/bag/bag.obj");
      Model lightSphere("../assets/sphere/source/sphere.obj");
 
@@ -149,7 +150,8 @@ int main(int, char **)
      VAO planeVAO;
      VBO planeVBO(planeVertices, sizeof(planeVertices));
      planeVAO.Bind();
-     planeVAO.LinkAttrib(planeVBO, 0, 3, GL_FLOAT, 3 * sizeof(float), (void*)(0));
+     planeVAO.LinkAttrib(planeVBO, 0, 3, GL_FLOAT, 5 * sizeof(float), (void*)(0));
+     planeVAO.LinkAttrib(planeVBO, 2, 2, GL_FLOAT, 5 * sizeof(float), (void*)(3 * sizeof(float)));
      planeVAO.Unbind();
      // quad geometry
      VAO quadVAO;
@@ -221,13 +223,15 @@ int main(int, char **)
      glm::vec3 dirLightDiffuseIntensity = {0.4f, 0.4f, 0.4f};
      glm::vec3 dirLightSpecularIntensity = {0.1f, 0.1f, 0.1f};
      glm::vec3 dirLightVecDirection = {-0.2f, -1.0f, -0.3f};
-
+     
      glm::vec3 pLightAmbient(0.6f);
      glm::vec3 pLightDiffuse(0.8f);
      glm::vec3 pLightSpecular(1.0f);
      float shinyValue = 32.0f;
-
+     
      glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+     depthShader.SetToInt("diffuseTexture", 0);
+     depthShader.SetToInt("shadowMap", 1);
 
      // Main Render Loop
      while (!glfwWindowShouldClose(window))
@@ -248,7 +252,7 @@ int main(int, char **)
 
            if (!io.WantCaptureMouse)
                camera.Inputs(window);
-          /*float nearPlane = 1.0f, farPlane = 7.5f;
+          float nearPlane = 1.0f, farPlane = 7.5f;
           glm::mat4 lightProj = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, nearPlane, farPlane);
 
           glm::mat4 lightView = glm::lookAt(glm::vec3(-2.0f, 4.0f, -1.0f),
@@ -275,28 +279,18 @@ int main(int, char **)
           depthShader.SetToMat4("model", modelMat);
           glDrawArrays(GL_TRIANGLES, 0, 6);
           planeVAO.Unbind();
-          glBindFramebuffer(GL_FRAMEBUFFER, 0);*/
+          glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
           // Render scene a second time
           glViewport(0, 0, width, height);
           glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-          modelShader.Activate();
-          camera.Matrix(45.0f, 0.1f, 100.0f, modelShader, "camMatrix");
-
           lightPos.x = cos(crntFrame) * radius;
           lightPos.y = sin(crntFrame) * radius;
-          // Directional Light Uniforms
-          modelShader.SetToFloat("u_mat.shininess", shinyValue);
-          modelShader.SetToVec3("u_viewPos", &camera.Position[0]);
-          
-          // directional light uniforms
-          shaderProgram.Activate();
-          shaderProgram.SetToVec3("u_mat.objectColor", &glm::vec3(0.5f)[0]);
-          shaderProgram.SetToFloat("u_mat.shininess", shinyValue);
-          shaderProgram.SetToVec3("u_viewPos", &camera.Position[0]);
 
-          glBindBuffer(GL_UNIFORM_BUFFER, uboLights);
+          camera.Matrix(45.0f, 0.1f, 100.0f);          
+
+          /*glBindBuffer(GL_UNIFORM_BUFFER, uboLights);
           // sub data for point light
           glBufferSubData(GL_UNIFORM_BUFFER, 0, 16, &lightPos[0]);
           glBufferSubData(GL_UNIFORM_BUFFER, 16, 16, &pLightAmbient[0]);
@@ -307,39 +301,44 @@ int main(int, char **)
           glBufferSubData(GL_UNIFORM_BUFFER, 76, 16, &dirLightVecDirection[0]);
           glBufferSubData(GL_UNIFORM_BUFFER, 92, 16, &dirLightAmbientIntensity[0]);
           glBufferSubData(GL_UNIFORM_BUFFER, 108, 16, &dirLightDiffuseIntensity[0]);
-          glBufferSubData(GL_UNIFORM_BUFFER, 124, 16, &dirLightSpecularIntensity[0]);
+          glBufferSubData(GL_UNIFORM_BUFFER, 124, 16, &dirLightSpecularIntensity[0]);*/
+          shadowShader.Activate();
+          glm::mat4 projection = camera.GetProjMatrix();
+          glm::mat4 view = camera.GetViewMatrix();
+          shadowShader.SetToMat4("projection", projection);
+          shadowShader.SetToMat4("view", view);
+          shadowShader.SetToMat4("lightSpaceMatrix", lightSpaceMat);
+          shadowShader.SetToVec3("lightPos", &lightPos[0]);
+          shadowShader.SetToVec3("viewPos", &camera.Position[0]);
+          glActiveTexture(GL_TEXTURE1);
+          glBindTexture(GL_TEXTURE_2D, depthMap);
 
-          modelShader.Activate();
           glm::mat4 modelM = glm::mat4(1.0f);
           modelM = glm::translate(modelM, glm::vec3(0.0f, 0.0f, 0.0f));
           modelM = glm::scale(modelM, glm::vec3(1.0f, 1.0f, 1.0f));
           modelM = glm::rotate(modelM, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-          modelShader.SetToMat4("model", modelM);
-          model.Draw(modelShader);
+          shadowShader.SetToMat4("model", modelM);
+          model.Draw(shadowShader);
 
-          lightSourceProgram.Activate();
-          camera.Matrix(45.0f, 0.1f, 100.0f, lightSourceProgram, "camMatrix");
-
-          glm::mat4 lightModel = glm::mat4(1.0f);
-          lightModel = glm::translate(lightModel, lightPos);
-          lightModel = glm::scale(lightModel, glm::vec3(0.15f, 0.15f, 0.15f));
-          
-          lightSourceProgram.SetToMat4("model", lightModel);
-          lightSphere.Draw(lightSourceProgram);
-
-          shaderProgram.Activate();
-          camera.Matrix(45.0f, 0.1f, 100.0f, shaderProgram, "camMatrix");
+          shadowShader.Activate();
           planeVAO.Bind();
           glm::mat4 model = glm::mat4(1.0f);
           model = glm::translate(model, glm::vec3(0.0f, -1.0f, 0.0f));
-          shaderProgram.SetToMat4("model", model);
+          shadowShader.SetToMat4("model", model);
           glDrawArrays(GL_TRIANGLES, 0, 6);
           planeVAO.Unbind();
 
-         /* // framebuffer quad
+          lightSourceProgram.Activate();
+          glm::mat4 lightModel = glm::mat4(1.0f);
+          lightModel = glm::translate(lightModel, lightPos);
+          lightModel = glm::scale(lightModel, glm::vec3(0.15f, 0.15f, 0.15f));
+          lightSourceProgram.SetToMat4("model", lightModel);
+          lightSphere.Draw(lightSourceProgram);
+
+          // framebuffer quad
           framebufferShader.Activate();
           glBindTexture(GL_TEXTURE_2D, depthMap);
-          framebufferShader.SetToInt("screenTexture", 0);
+          /*framebufferShader.SetToInt("screenTexture", 0);
           quadVAO.Bind();
           glDrawArrays(GL_TRIANGLES, 0, 6);
           quadVAO.Unbind();*/
