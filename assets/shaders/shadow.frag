@@ -31,11 +31,11 @@ void main()
     vec3 viewDir = normalize(viewPos - fs_in.vFragPos);
     float spec = 0.0;
     vec3 halfwayDir = normalize(lightDir + viewDir);
-    spec = pow(max(dot(normal, halfwayDir), 0.0), 64.0);
+    spec = pow(max(dot(normal, halfwayDir), 0.0), 32.0);
     vec3 specular = spec * lightColor;
     // calculate shadows
     float shadow = ShadowCalculation(fs_in.vFragPosLightSpace);
-    vec3 lighting = (ambient + (1.0 - shadow) * (diffuse + specular) * color);
+    vec3 lighting = (ambient + (1.0 - shadow) * (diffuse + specular)) * color;
 
     FragColor = vec4(lighting, 1.0);
 }

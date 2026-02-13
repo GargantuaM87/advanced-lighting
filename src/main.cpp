@@ -77,14 +77,14 @@ int main(int, char **)
              -0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f};
 
      float planeVertices[] = {
-       // positions           // texture Coords 
-         5.0f, -0.5f,  5.0f,  2.0f, 0.0f,
-        -5.0f, -0.5f,  5.0f,  0.0f, 0.0f,
-        -5.0f, -0.5f, -5.0f,  0.0f, 2.0f,
+       // positions            // normals         // texcoords
+         25.0f, -0.5f,  25.0f,  0.0f, 1.0f, 0.0f,  25.0f,  0.0f,
+        -25.0f, -0.5f,  25.0f,  0.0f, 1.0f, 0.0f,   0.0f,  0.0f,
+        -25.0f, -0.5f, -25.0f,  0.0f, 1.0f, 0.0f,   0.0f, 25.0f,
 
-         5.0f, -0.5f,  5.0f,  2.0f, 0.0f,
-        -5.0f, -0.5f, -5.0f,  0.0f, 2.0f,
-         5.0f, -0.5f, -5.0f,  2.0f, 2.0f
+         25.0f, -0.5f,  25.0f,  0.0f, 1.0f, 0.0f,  25.0f,  0.0f,
+        -25.0f, -0.5f, -25.0f,  0.0f, 1.0f, 0.0f,   0.0f, 25.0f,
+         25.0f, -0.5f, -25.0f,  0.0f, 1.0f, 0.0f,  25.0f, 25.0f
     };
 
      float quadVertices[] = {
@@ -124,34 +124,19 @@ int main(int, char **)
      Shader depthShader("../assets/shaders/simpleDepthShader.vert", "../assets/shaders/simpleDepthShader.frag");
      Shader framebufferShader("../assets/shaders/framebuffer.vert", "../assets/shaders/framebuffer.frag");
      Shader shadowShader("../assets/shaders/shadow.vert", "../assets/shaders/shadow.frag");
-
+     // models
      Model model("../assets/bag/bag.obj");
      Model lightSphere("../assets/sphere/source/sphere.obj");
+     // textures
+     TextureUnit woodTexture("../assets/textures/woodTex.jpeg", GL_TEXTURE_2D, GL_TEXTURE0, GL_RGBA, GL_UNSIGNED_BYTE);
 
-     // Vertex Array Buffer
-     VAO VAO1;
-     VAO1.Bind(); // Tells OpenGL to activate this VAO
-     // Vertex Buffer Object
-     // Contains vertex attributes such as position and color
-     VBO VBO1(vertices, sizeof(vertices));
-     // EBO EBO1(indices, sizeof(indices)); // Responsible for storing indices on the GPU and drawing them in a specific order
-     // Creating a second geometrical object
-     VAO1.LinkAttrib(VBO1, 0, 3, GL_FLOAT, 8 * sizeof(float), (void *)0); // Basically create a pointer to the VBO (position)
-     VAO1.LinkAttrib(VBO1, 1, 3, GL_FLOAT, 8 * sizeof(float), (void *)(3 * sizeof(float)));
-     VAO1.LinkAttrib(VBO1, 2, 2, GL_FLOAT, 8 * sizeof(float), (void *)(6 * sizeof(float)));
-     VAO1.Unbind();
-     // Creating our second VAO for another object
-     VAO VAO2;
-     VAO2.Bind();
-     // EBO EBO2(indices, sizeof(indices));
-     VAO2.LinkAttrib(VBO1, 0, 3, GL_FLOAT, 8 * sizeof(float), (void *)0); // We reuse the first VBO since it already has the attributes we want
-     VAO2.Unbind();
      // plane geometry
      VAO planeVAO;
      VBO planeVBO(planeVertices, sizeof(planeVertices));
      planeVAO.Bind();
-     planeVAO.LinkAttrib(planeVBO, 0, 3, GL_FLOAT, 5 * sizeof(float), (void*)(0));
-     planeVAO.LinkAttrib(planeVBO, 2, 2, GL_FLOAT, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+     planeVAO.LinkAttrib(planeVBO, 0, 3, GL_FLOAT, 8 * sizeof(float), (void*)(0));
+     planeVAO.LinkAttrib(planeVBO, 1, 3, GL_FLOAT, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+     planeVAO.LinkAttrib(planeVBO, 2, 2, GL_FLOAT, 8 * sizeof(float), (void*)(6 * sizeof(float)));
      planeVAO.Unbind();
      // quad geometry
      VAO quadVAO;
@@ -230,7 +215,8 @@ int main(int, char **)
      float shinyValue = 32.0f;
      
      glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-     depthShader.SetToInt("diffuseTexture", 0);
+     depthShader.Activate();
+     depthShader.SetToInt("texture_diffuse1", 0);
      depthShader.SetToInt("shadowMap", 1);
 
      // Main Render Loop
@@ -254,10 +240,7 @@ int main(int, char **)
                camera.Inputs(window);
           float nearPlane = 1.0f, farPlane = 7.5f;
           glm::mat4 lightProj = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, nearPlane, farPlane);
-
-          glm::mat4 lightView = glm::lookAt(glm::vec3(-2.0f, 4.0f, -1.0f),
-                                            glm::vec3(0.0f, 0.0f, 0.0f),
-                                            glm::vec3(0.0f, 1.0f, 0.0f));
+          glm::mat4 lightView = glm::lookAt(lightPos, glm::vec3(0.0f), glm::vec3(0.0, 1.0, 0.0));
           glm::mat4 lightSpaceMat = lightProj * lightView;
           depthShader.Activate();
           depthShader.SetToMat4("lightSpaceMatrix", lightSpaceMat);
@@ -273,15 +256,17 @@ int main(int, char **)
           depthShader.SetToMat4("model", modelMat);
           model.Draw(depthShader);
           // 2nd model (not rlly a model, but just a plane)
-          modelMat = glm::mat4(1.0f);
-          modelMat = glm::translate(modelMat, glm::vec3(0.0f, -1.0f, 0.0f));
+          glActiveTexture(GL_TEXTURE0);
+          woodTexture.Bind();
+          glm::mat4 planeModel = glm::mat4(1.0f);
+          planeModel = glm::translate(planeModel, glm::vec3(0.0f, -1.0f, 0.0f)); 
           planeVAO.Bind();
-          depthShader.SetToMat4("model", modelMat);
+          depthShader.SetToMat4("model", planeModel);
           glDrawArrays(GL_TRIANGLES, 0, 6);
           planeVAO.Unbind();
           glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-          // Render scene a second time
+          // 2ND PASS
           glViewport(0, 0, width, height);
           glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -290,18 +275,7 @@ int main(int, char **)
 
           camera.Matrix(45.0f, 0.1f, 100.0f);          
 
-          /*glBindBuffer(GL_UNIFORM_BUFFER, uboLights);
-          // sub data for point light
-          glBufferSubData(GL_UNIFORM_BUFFER, 0, 16, &lightPos[0]);
-          glBufferSubData(GL_UNIFORM_BUFFER, 16, 16, &pLightAmbient[0]);
-          glBufferSubData(GL_UNIFORM_BUFFER, 32, 16, &pLightDiffuse[0]);
-          glBufferSubData(GL_UNIFORM_BUFFER, 48, 16, &pLightSpecular[0]);
-          glBufferSubData(GL_UNIFORM_BUFFER, 64, 12, &attenuationValues[0]);
-          // sub data for directional light
-          glBufferSubData(GL_UNIFORM_BUFFER, 76, 16, &dirLightVecDirection[0]);
-          glBufferSubData(GL_UNIFORM_BUFFER, 92, 16, &dirLightAmbientIntensity[0]);
-          glBufferSubData(GL_UNIFORM_BUFFER, 108, 16, &dirLightDiffuseIntensity[0]);
-          glBufferSubData(GL_UNIFORM_BUFFER, 124, 16, &dirLightSpecularIntensity[0]);*/
+          // light uniforms
           shadowShader.Activate();
           glm::mat4 projection = camera.GetProjMatrix();
           glm::mat4 view = camera.GetViewMatrix();
@@ -310,30 +284,26 @@ int main(int, char **)
           shadowShader.SetToMat4("lightSpaceMatrix", lightSpaceMat);
           shadowShader.SetToVec3("lightPos", &lightPos[0]);
           shadowShader.SetToVec3("viewPos", &camera.Position[0]);
+          glActiveTexture(GL_TEXTURE0);
+          woodTexture.Bind();
           glActiveTexture(GL_TEXTURE1);
           glBindTexture(GL_TEXTURE_2D, depthMap);
-
-          glm::mat4 modelM = glm::mat4(1.0f);
-          modelM = glm::translate(modelM, glm::vec3(0.0f, 0.0f, 0.0f));
-          modelM = glm::scale(modelM, glm::vec3(1.0f, 1.0f, 1.0f));
-          modelM = glm::rotate(modelM, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-          shadowShader.SetToMat4("model", modelM);
+          // drawing the model
+          shadowShader.SetToMat4("model", modelMat);
           model.Draw(shadowShader);
-
+          // drawing the plane
           shadowShader.Activate();
           planeVAO.Bind();
-          glm::mat4 model = glm::mat4(1.0f);
-          model = glm::translate(model, glm::vec3(0.0f, -1.0f, 0.0f));
-          shadowShader.SetToMat4("model", model);
+          woodTexture.Bind();
+          shadowShader.SetToMat4("model", planeModel);
           glDrawArrays(GL_TRIANGLES, 0, 6);
           planeVAO.Unbind();
 
-          lightSourceProgram.Activate();
           glm::mat4 lightModel = glm::mat4(1.0f);
           lightModel = glm::translate(lightModel, lightPos);
           lightModel = glm::scale(lightModel, glm::vec3(0.15f, 0.15f, 0.15f));
-          lightSourceProgram.SetToMat4("model", lightModel);
-          lightSphere.Draw(lightSourceProgram);
+          shadowShader.SetToMat4("model", lightModel);
+          lightSphere.Draw(shadowShader);
 
           // framebuffer quad
           framebufferShader.Activate();
@@ -376,11 +346,6 @@ int main(int, char **)
      ImGui::DestroyContext();
 
      // Deleting objects (memory management!)
-     VAO1.Delete();
-     VAO2.Delete();
-     VBO1.Delete();
-     // EBO1.Delete();
-     // EBO2.Delete();
      shaderProgram.Delete();
      lightSourceProgram.Delete();
      // diffuseMap.Delete();
