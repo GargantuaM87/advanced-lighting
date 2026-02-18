@@ -14,7 +14,7 @@ uniform sampler2D shadowMap;
 uniform vec3 lightPos;
 uniform vec3 viewPos;
 
-float ShadowCalculation(vec4 fragPosLightSpace);
+float ShadowCalculation(vec4 fragPosLightSpace, float bias);
 
 void main() 
 {
@@ -34,13 +34,14 @@ void main()
     spec = pow(max(dot(normal, halfwayDir), 0.0), 32.0);
     vec3 specular = spec * lightColor;
     // calculate shadows
-    float shadow = ShadowCalculation(fs_in.vFragPosLightSpace);
+    float bias = max(0.05 * (1 - dot(normal, lightDir)), 0.005);
+    float shadow = ShadowCalculation(fs_in.vFragPosLightSpace, bias);
     vec3 lighting = (ambient + (1.0 - shadow) * (diffuse + specular)) * color;
 
     FragColor = vec4(lighting, 1.0);
 }
 
-float ShadowCalculation(vec4 fragPosLightSpace)
+float ShadowCalculation(vec4 fragPosLightSpace, float bias)
 {
     //perform perspective division (divide by W_c in clip space)
     vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
@@ -51,7 +52,7 @@ float ShadowCalculation(vec4 fragPosLightSpace)
     // depth of current fragment from light's perspective
     float currentDepth = projCoords.z;
     // check wheter current frag pos is in shadow
-    float shadow = currentDepth > closestDepth ? 1.0 : 0.0;
+    float shadow = currentDepth - bias > closestDepth ? 1.0 : 0.0;
 
     return shadow;
 }

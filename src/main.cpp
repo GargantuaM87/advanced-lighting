@@ -182,6 +182,7 @@ int main(int, char **)
 
 
      glEnable(GL_DEPTH_TEST); // Allows for depth comparison and updates the depth buffer
+     glEnable(GL_CULL_FACE);
 
      Camera camera(width, height, glm::vec3(0.0f, 0.0f, 2.0f));
 
@@ -223,6 +224,7 @@ int main(int, char **)
      while (!glfwWindowShouldClose(window))
      {
           glEnable(GL_DEPTH_TEST);
+          glEnable(GL_CULL_FACE);
           // Specify color of background
           glClearColor(0.0f, 0.0f, 0.15f, 1.0f);
           // Clean the back buffer and assign the new color to it and update the depth buffer
@@ -247,6 +249,7 @@ int main(int, char **)
           glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
           glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
           glClear(GL_DEPTH_BUFFER_BIT);
+          glCullFace(GL_FRONT);
           // 1st pass of rendering scene
           // first model (bag)
           glm::mat4 modelMat = glm::mat4(1.0f);
@@ -255,6 +258,7 @@ int main(int, char **)
           modelMat = glm::rotate(modelMat, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
           depthShader.SetToMat4("model", modelMat);
           model.Draw(depthShader);
+          glDisable(GL_CULL_FACE);
           // 2nd model (not rlly a model, but just a plane)
           glActiveTexture(GL_TEXTURE0);
           woodTexture.Bind();
@@ -265,7 +269,7 @@ int main(int, char **)
           glDrawArrays(GL_TRIANGLES, 0, 6);
           planeVAO.Unbind();
           glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
+          
           // 2ND PASS
           glViewport(0, 0, width, height);
           glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
