@@ -43,15 +43,20 @@ void main()
 
 float ShadowCalculation(vec4 fragPosLightSpace, float bias)
 {
-    //perform perspective division (divide by W_c in clip space)
     vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
-    // transform range from [-1, 1] to [0, 1]
     projCoords = projCoords * 0.5 + 0.5;
-    // closest depth value from light's perspective in the range [0, 1]
-    float closestDepth =  texture(shadowMap, projCoords.xy).r;
-    // depth of current fragment from light's perspective
+
+    // If outside light frustum → no shadow
+    if(projCoords.z > 1.0)
+        return 0.0;
+
+    if(projCoords.x < 0.0 || projCoords.x > 1.0 ||
+       projCoords.y < 0.0 || projCoords.y > 1.0)
+        return 0.0;
+
+    float closestDepth = texture(shadowMap, projCoords.xy).r;
     float currentDepth = projCoords.z;
-    // check wheter current frag pos is in shadow
+
     float shadow = currentDepth - bias > closestDepth ? 1.0 : 0.0;
 
     return shadow;

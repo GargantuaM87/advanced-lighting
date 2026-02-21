@@ -8,11 +8,12 @@ out vec3 FragPos;
 out vec2 TexCoords;
  // Uniforms are inputted from the CPU to all parallel threads on the GPU
 uniform mat4 model;
-uniform mat4 camMatrix;
+uniform mat4 view;
+uniform mat4 proj;
 
 void main()
 {
-    gl_Position = camMatrix * model * vec4(aPos, 1.0);
+    gl_Position = proj * view * model * vec4(aPos, 1.0);
     FragPos = vec3(model * vec4(aPos, 1.0));
 
     // Inversing matrices is a costly operation for shaders since they have to be done on each vertex of our scene

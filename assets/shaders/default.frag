@@ -43,12 +43,9 @@ struct SpotLight
     vec3 diffuse;
     vec3 specular;
 };
-// 140 bytes in total
-layout (std140) uniform Lights
-{
-    PointLight u_pointLights; // 76 bytes for each PointLight
-    DirectionalLight u_dirLight; // 64 bytes for each DirLight
-};
+
+PointLight u_pointLights; 
+DirectionalLight u_dirLight; 
 uniform SpotLight u_spotLight;
 uniform Material u_mat;
 uniform vec3 u_viewPos;

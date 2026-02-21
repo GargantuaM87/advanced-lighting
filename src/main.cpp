@@ -31,53 +31,9 @@ void framebuffer_size_callback(GLFWwindow *window, int width, int height)
 int main(int, char **)
 {
      // Storing our values of each vertex in our coordinate space
-     GLfloat vertices[] =
-         {
-             // positions          // normals           // texture coords
-             -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f,
-             0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 1.0f, 0.0f,
-             0.5f, 0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 1.0f, 1.0f,
-             0.5f, 0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 1.0f, 1.0f,
-             -0.5f, 0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f,
-             -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f,
-
-             -0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f,
-             0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f,
-             0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f,
-             0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f,
-             -0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f,
-             -0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f,
-
-             -0.5f, 0.5f, 0.5f, -1.0f, 0.0f, 0.0f, 1.0f, 0.0f,
-             -0.5f, 0.5f, -0.5f, -1.0f, 0.0f, 0.0f, 1.0f, 1.0f,
-             -0.5f, -0.5f, -0.5f, -1.0f, 0.0f, 0.0f, 0.0f, 1.0f,
-             -0.5f, -0.5f, -0.5f, -1.0f, 0.0f, 0.0f, 0.0f, 1.0f,
-             -0.5f, -0.5f, 0.5f, -1.0f, 0.0f, 0.0f, 0.0f, 0.0f,
-             -0.5f, 0.5f, 0.5f, -1.0f, 0.0f, 0.0f, 1.0f, 0.0f,
-
-             0.5f, 0.5f, 0.5f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f,
-             0.5f, 0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f,
-             0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f,
-             0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f,
-             0.5f, -0.5f, 0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f,
-             0.5f, 0.5f, 0.5f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f,
-
-             -0.5f, -0.5f, -0.5f, 0.0f, -1.0f, 0.0f, 0.0f, 1.0f,
-             0.5f, -0.5f, -0.5f, 0.0f, -1.0f, 0.0f, 1.0f, 1.0f,
-             0.5f, -0.5f, 0.5f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f,
-             0.5f, -0.5f, 0.5f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f,
-             -0.5f, -0.5f, 0.5f, 0.0f, -1.0f, 0.0f, 0.0f, 0.0f,
-             -0.5f, -0.5f, -0.5f, 0.0f, -1.0f, 0.0f, 0.0f, 1.0f,
-
-             -0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,
-             0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f,
-             0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f,
-             0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f,
-             -0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f,
-             -0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f};
 
      float planeVertices[] = {
-       // positions            // normals         // texcoords
+      // positions            // normals         // texcoords
          25.0f, -0.5f,  25.0f,  0.0f, 1.0f, 0.0f,  25.0f,  0.0f,
         -25.0f, -0.5f,  25.0f,  0.0f, 1.0f, 0.0f,   0.0f,  0.0f,
         -25.0f, -0.5f, -25.0f,  0.0f, 1.0f, 0.0f,   0.0f, 25.0f,
@@ -118,15 +74,16 @@ int main(int, char **)
      }
      // Parses the fragment and vertex shader files and wraps them into a shader program
      // The files are compiled to an intermediary language then translated into specific instructions for the GPU
-     Shader shaderProgram("../assets/shaders/default.vert", "../assets/shaders/default.frag");
-     Shader lightSourceProgram("../assets/shaders/lightSource.vert", "../assets/shaders/lightSource.frag"); // Shader program for light sources
+     Shader defaultShader("../assets/shaders/default.vert", "../assets/shaders/default.frag");
      Shader modelShader("../assets/shaders/model.vert", "../assets/shaders/model.frag");
      Shader depthShader("../assets/shaders/simpleDepthShader.vert", "../assets/shaders/simpleDepthShader.frag");
      Shader framebufferShader("../assets/shaders/framebuffer.vert", "../assets/shaders/framebuffer.frag");
      Shader shadowShader("../assets/shaders/shadow.vert", "../assets/shaders/shadow.frag");
      // models
-     Model model("../assets/bag/bag.obj");
-     Model lightSphere("../assets/sphere/source/sphere.obj");
+     Model cube("../assets/cube.obj");
+     Model plane("../assets/plane.obj");
+     Model torus("../assets/torus.obj");
+     Model sphere("../assets/sphere/source/sphere.obj");
      // textures
      TextureUnit woodTexture("../assets/textures/woodTex.jpeg", GL_TEXTURE_2D, GL_TEXTURE0, GL_RGBA, GL_UNSIGNED_BYTE);
 
@@ -160,6 +117,7 @@ int main(int, char **)
      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT); 
      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);  
+
      // attatch to framebuffer's depth buffer
      glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO); // only need depth info when rendering the scene from light's perspective
      glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMap, 0);
@@ -167,32 +125,18 @@ int main(int, char **)
      glReadBuffer(GL_NONE); // so we explicitely set these states so OpenGL knows we're not going to render color data
      glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-     // uniform buffer object
-     unsigned int uboLights;
-     glGenBuffers(1, &uboLights);
-     glBindBuffer(GL_UNIFORM_BUFFER, uboLights);
-     glBufferData(GL_UNIFORM_BUFFER, 140, NULL, GL_STATIC_DRAW);
-     glBindBufferBase(GL_UNIFORM_BUFFER, 0, uboLights);
-     glBindBuffer(GL_UNIFORM_BUFFER, 0);
-
-     unsigned int shaderProgramIndex = glGetUniformBlockIndex(shaderProgram.ID, "Lights");
-     glUniformBlockBinding(shaderProgram.ID, shaderProgramIndex, 0);
-     unsigned int modelShaderIndex = glGetUniformBlockIndex(modelShader.ID, "Lights");
-     glUniformBlockBinding(modelShader.ID, modelShaderIndex, 0);
-
-
      glEnable(GL_DEPTH_TEST); // Allows for depth comparison and updates the depth buffer
-     glEnable(GL_CULL_FACE);
+     //glEnable(GL_CULL_FACE);
 
+     // -----------RENDER LOOP VARIABLES-----------
      Camera camera(width, height, glm::vec3(0.0f, 0.0f, 2.0f));
-
      glm::vec3 lightPos(0.5f, 0.5f, 0.0f);
+     glm::vec3 dirLightPos(0);
      float radius = 3.0f;
-     float attenuationValues[] = { 1.0f, 0.09f, 0.032f };
 
      float deltaTime = 0.0f;
      float lastFrame = 0.0f;
-
+     //-----------RENDER LOOP VARIABLES-----------
      IMGUI_CHECKVERSION();
      ImGui::CreateContext();
      ImGuiIO &io = ImGui::GetIO();
@@ -200,34 +144,16 @@ int main(int, char **)
      ImGui::StyleColorsDark();
      ImGui_ImplGlfw_InitForOpenGL(window, true);
      ImGui_ImplOpenGL3_Init("#version 330");
-
-     // ImGui Variables
-     bool drawTriangle = true;
-     glm::vec3 colorValue = {1.0f, 1.0f, 1.0f};
-
-     glm::vec3 dirLightAmbientIntensity = {0.05f, 0.05f, 0.05f};
-     glm::vec3 dirLightDiffuseIntensity = {0.4f, 0.4f, 0.4f};
-     glm::vec3 dirLightSpecularIntensity = {0.1f, 0.1f, 0.1f};
-     glm::vec3 dirLightVecDirection = {-0.2f, -1.0f, -0.3f};
-     
-     glm::vec3 pLightAmbient(0.6f);
-     glm::vec3 pLightDiffuse(0.8f);
-     glm::vec3 pLightSpecular(1.0f);
-     float shinyValue = 32.0f;
      
      glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
      depthShader.Activate();
-     depthShader.SetToInt("texture_diffuse1", 0);
      depthShader.SetToInt("shadowMap", 1);
 
      // Main Render Loop
      while (!glfwWindowShouldClose(window))
      {
           glEnable(GL_DEPTH_TEST);
-          glEnable(GL_CULL_FACE);
-          // Specify color of background
           glClearColor(0.0f, 0.0f, 0.15f, 1.0f);
-          // Clean the back buffer and assign the new color to it and update the depth buffer
           glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
           ImGui_ImplOpenGL3_NewFrame();
@@ -240,76 +166,38 @@ int main(int, char **)
 
            if (!io.WantCaptureMouse)
                camera.Inputs(window);
-          float nearPlane = 1.0f, farPlane = 7.5f;
-          glm::mat4 lightProj = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, nearPlane, farPlane);
-          glm::mat4 lightView = glm::lookAt(lightPos, glm::vec3(0.0f), glm::vec3(0.0, 1.0, 0.0));
-          glm::mat4 lightSpaceMat = lightProj * lightView;
-          depthShader.Activate();
-          depthShader.SetToMat4("lightSpaceMatrix", lightSpaceMat);
-          glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
-          glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
-          glClear(GL_DEPTH_BUFFER_BIT);
-          glCullFace(GL_FRONT);
-          // 1st pass of rendering scene
-          // first model (bag)
-          glm::mat4 modelMat = glm::mat4(1.0f);
-          modelMat = glm::translate(modelMat, glm::vec3(0.0f));
-          modelMat = glm::scale(modelMat, glm::vec3(1.0f));
-          modelMat = glm::rotate(modelMat, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-          depthShader.SetToMat4("model", modelMat);
-          model.Draw(depthShader);
-          glDisable(GL_CULL_FACE);
-          // 2nd model (not rlly a model, but just a plane)
-          glActiveTexture(GL_TEXTURE0);
-          woodTexture.Bind();
-          glm::mat4 planeModel = glm::mat4(1.0f);
-          planeModel = glm::translate(planeModel, glm::vec3(0.0f, -1.0f, 0.0f)); 
-          planeVAO.Bind();
-          depthShader.SetToMat4("model", planeModel);
-          glDrawArrays(GL_TRIANGLES, 0, 6);
-          planeVAO.Unbind();
-          glBindFramebuffer(GL_FRAMEBUFFER, 0);
           
-          // 2ND PASS
-          glViewport(0, 0, width, height);
-          glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+          camera.Matrix(45, 0.1, 100);
 
-          lightPos.x = cos(crntFrame) * radius;
-          lightPos.y = sin(crntFrame) * radius;
-
-          camera.Matrix(45.0f, 0.1f, 100.0f);          
-
-          // light uniforms
-          shadowShader.Activate();
-          glm::mat4 projection = camera.GetProjMatrix();
+          defaultShader.Activate();
           glm::mat4 view = camera.GetViewMatrix();
-          shadowShader.SetToMat4("projection", projection);
-          shadowShader.SetToMat4("view", view);
-          shadowShader.SetToMat4("lightSpaceMatrix", lightSpaceMat);
-          shadowShader.SetToVec3("lightPos", &lightPos[0]);
-          shadowShader.SetToVec3("viewPos", &camera.Position[0]);
-          glActiveTexture(GL_TEXTURE0);
-          woodTexture.Bind();
-          glActiveTexture(GL_TEXTURE1);
-          glBindTexture(GL_TEXTURE_2D, depthMap);
-          // drawing the model
-          shadowShader.SetToMat4("model", modelMat);
-          model.Draw(shadowShader);
-          // drawing the plane
-          shadowShader.Activate();
-          planeVAO.Bind();
-          woodTexture.Bind();
-          shadowShader.SetToMat4("model", planeModel);
-          glDrawArrays(GL_TRIANGLES, 0, 6);
-          planeVAO.Unbind();
+          glm::mat4 proj = camera.GetProjMatrix();
 
-          glm::mat4 lightModel = glm::mat4(1.0f);
-          lightModel = glm::translate(lightModel, lightPos);
-          lightModel = glm::scale(lightModel, glm::vec3(0.15f, 0.15f, 0.15f));
-          shadowShader.SetToMat4("model", lightModel);
-          lightSphere.Draw(shadowShader);
+          defaultShader.SetToMat4("view", view);
+          defaultShader.SetToMat4("proj", proj);
+          // Light uniforms
+          defaultShader.SetToVec3("u_dirLight.direction", &glm::vec3(0)[0]);
+          defaultShader.SetToVec3("u_dirLight.ambient", &glm::vec3(1)[0]);
+          defaultShader.SetToVec3("u_dirLight.diffuse", &glm::vec3(0.8)[0]);
+          defaultShader.SetToVec3("u_dirLight.specular", &glm::vec3(0.2)[0]);
+          defaultShader.SetToVec3("u_pointLights.position", &lightPos[0]);
+          defaultShader.SetToVec3("u_pointLights.ambient", &glm::vec3(1.0f)[0]);
+          defaultShader.SetToVec3("u_pointLights.diffuse", &glm::vec3(1.0f)[0]);
+          defaultShader.SetToVec3("u_pointLights.specular", &glm::vec3(0.09f)[0]);
+          defaultShader.SetToFloat("u_pointLights.constant", 1.0f);
+          defaultShader.SetToFloat("u_pointLights.linear", 0.09f);
+          defaultShader.SetToFloat("u_pointLights.quadratic", 0.032f);
+          // Material Uniforms
+          defaultShader.SetToVec3("u_mat.objectColor", &glm::vec3(0.8f)[0]);
+          defaultShader.SetToFloat("u_mat.shininess", 32.0f);
+          // Drawing Models
+          glm::mat4 model = glm::mat4(1.0f);
+          defaultShader.SetToMat4("model", model);
+          plane.Draw(defaultShader);
+          
 
-          // framebuffer quad
+
+          // ---------DEPTH DEBUGGING---------
           framebufferShader.Activate();
           glBindTexture(GL_TEXTURE_2D, depthMap);
           /*framebufferShader.SetToInt("screenTexture", 0);
@@ -317,23 +205,19 @@ int main(int, char **)
           glDrawArrays(GL_TRIANGLES, 0, 6);
           quadVAO.Unbind();*/
 
-          // GUI STUFF
+          // ---------IMGUI---------
           ImGui::Begin("OpenGL Settings Panel");
           ImGui::Text("Tweaks");
-          ImGui::Checkbox("Draw Triangle", &drawTriangle);
 
           ImGui::Separator();
 
           ImGui::Text("Edit Directional Light");
-          ImGui::SliderFloat3("Light Direction", &dirLightVecDirection[0], 0.0f, 1.0f, "%.2f");
-          ImGui::SliderFloat("Shininess", &shinyValue, 0.0f, 64.0f, 0);
+          
 
           ImGui::Separator();
 
           ImGui::Text("Edit Point Light");
-          ImGui::SliderFloat3("Point Ambience", &pLightAmbient[0], 0.0f, 1.0f, "%.2f");
-          ImGui::SliderFloat3("Point Diffusion", &pLightDiffuse[0], 0.0f, 1.0f, "%.2f");
-          ImGui::SliderFloat3("Point Specular", &pLightSpecular[0], 0.0f, 1.0f, "%.2f");
+          ImGui::SliderFloat3("Light Pos", &lightPos[0], 0.0f, 10.0f);
           ImGui::End();
           
           ImGui::Render();
@@ -349,11 +233,8 @@ int main(int, char **)
      ImGui_ImplGlfw_Shutdown();
      ImGui::DestroyContext();
 
-     // Deleting objects (memory management!)
-     shaderProgram.Delete();
-     lightSourceProgram.Delete();
-     // diffuseMap.Delete();
-     // specularMap.Delete();
+     // ------------OBJECT DELETION------------
+     defaultShader.Delete();
 
      glfwTerminate();
      return 0;
