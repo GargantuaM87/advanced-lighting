@@ -115,14 +115,17 @@ int main(int, char **)
      glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT); 
-     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);  
+     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE); 
+     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);  
 
      // attatch to framebuffer's depth buffer
      glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO); // only need depth info when rendering the scene from light's perspective
      glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMap, 0);
      glDrawBuffer(GL_NONE); // framebuffer obj is not complete without a color buffer
      glReadBuffer(GL_NONE); // so we explicitely set these states so OpenGL knows we're not going to render color data
+     
+     if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+          return -1;
      glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
      glEnable(GL_DEPTH_TEST); // Allows for depth comparison and updates the depth buffer
@@ -130,7 +133,7 @@ int main(int, char **)
 
      // -----------RENDER LOOP VARIABLES-----------
      Camera camera(width, height, glm::vec3(0.0f, 0.0f, 2.0f));
-     glm::vec3 lightPos(0.5f, 0.5f, 0.0f);
+     glm::vec3 lightPos(0.1f, 8.0f, 5.0f);
      glm::vec3 dirLightPos(0);
      float radius = 3.0f;
 
@@ -168,7 +171,18 @@ int main(int, char **)
                camera.Inputs(window);
           
           camera.Matrix(45, 0.1, 100);
+          glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
+          //--------------SHADERS & MODEL DRAWING--------------
+          glm::vec3 lightInvDir = glm::vec3(0.5f, 2, 2);
 
+          // MVP from light's point of view
+          glm::mat4 depthProjection = glm::ortho<float>(-10, 10, -10, 10, -10, 20);
+          glm::mat4 depthView = glm::lookAt(lightInvDir, glm::vec3(0), glm::vec3(0, 1, 0));
+          glm::mat4 depthModel = glm::mat4(1.0f);
+          glm::mat4 depthMVP = depthProjection * depthView * depthModel;
+          depthShader.Activate();
+          depthShader.SetToMat4("lightSpaceMatrix", depthMVP);
+          glBindFramebuffer(GL_FRAMEBUFFER, 0);
           defaultShader.Activate();
           glm::mat4 view = camera.GetViewMatrix();
           glm::mat4 proj = camera.GetProjMatrix();
@@ -176,34 +190,51 @@ int main(int, char **)
           defaultShader.SetToMat4("view", view);
           defaultShader.SetToMat4("proj", proj);
           // Light uniforms
-          defaultShader.SetToVec3("u_dirLight.direction", &glm::vec3(0)[0]);
-          defaultShader.SetToVec3("u_dirLight.ambient", &glm::vec3(1)[0]);
+          defaultShader.SetToVec3("u_dirLight.direction", &dirLightPos[0]);
+          defaultShader.SetToVec3("u_dirLight.ambient", &glm::vec3(0.2)[0]);
           defaultShader.SetToVec3("u_dirLight.diffuse", &glm::vec3(0.8)[0]);
-          defaultShader.SetToVec3("u_dirLight.specular", &glm::vec3(0.2)[0]);
+          defaultShader.SetToVec3("u_dirLight.specular", &glm::vec3(0.1)[0]);
           defaultShader.SetToVec3("u_pointLights.position", &lightPos[0]);
-          defaultShader.SetToVec3("u_pointLights.ambient", &glm::vec3(1.0f)[0]);
-          defaultShader.SetToVec3("u_pointLights.diffuse", &glm::vec3(1.0f)[0]);
+          defaultShader.SetToVec3("u_pointLights.ambient", &glm::vec3(0.8f)[0]);
+          defaultShader.SetToVec3("u_pointLights.diffuse", &glm::vec3(0.8f)[0]);
           defaultShader.SetToVec3("u_pointLights.specular", &glm::vec3(0.09f)[0]);
           defaultShader.SetToFloat("u_pointLights.constant", 1.0f);
           defaultShader.SetToFloat("u_pointLights.linear", 0.09f);
           defaultShader.SetToFloat("u_pointLights.quadratic", 0.032f);
+          defaultShader.SetToVec3("u_viewPos", &camera.Position[0]);
           // Material Uniforms
           defaultShader.SetToVec3("u_mat.objectColor", &glm::vec3(0.8f)[0]);
           defaultShader.SetToFloat("u_mat.shininess", 32.0f);
           // Drawing Models
+          // Plane
           glm::mat4 model = glm::mat4(1.0f);
+          model = glm::scale(model, glm::vec3(5.0));
           defaultShader.SetToMat4("model", model);
           plane.Draw(defaultShader);
-          
-
+          // Cube
+          model = glm::mat4(1.0f);
+          model = glm::translate(model, glm::vec3(0.0f, 2.0f, 2.0f));
+          model = glm::scale(model, glm::vec3(0.8));
+          defaultShader.SetToMat4("model", model);
+          cube.Draw(defaultShader);
+          // Torus
+          model = glm::mat4(1.0f);
+          model = glm::translate(model, glm::vec3(-0.5f, 0.5, -2.0f));
+          defaultShader.SetToMat4("model", model);
+          torus.Draw(defaultShader);
+          // Sphere
+          model = glm::mat4(1.0f);
+          model = glm::translate(model, glm::vec3(0.0f, 2.0f, -1.0f));
+          defaultShader.SetToMat4("model", model);
+          sphere.Draw(defaultShader);
+          //--------------END OF SHADERS & MODEL DRAWING--------------
 
           // ---------DEPTH DEBUGGING---------
           framebufferShader.Activate();
           glBindTexture(GL_TEXTURE_2D, depthMap);
-          /*framebufferShader.SetToInt("screenTexture", 0);
           quadVAO.Bind();
           glDrawArrays(GL_TRIANGLES, 0, 6);
-          quadVAO.Unbind();*/
+          quadVAO.Unbind();
 
           // ---------IMGUI---------
           ImGui::Begin("OpenGL Settings Panel");
@@ -212,12 +243,12 @@ int main(int, char **)
           ImGui::Separator();
 
           ImGui::Text("Edit Directional Light");
+          ImGui::SliderFloat3("DirLight Pos", &dirLightPos[0], 0.0f, 10.0f);
           
-
           ImGui::Separator();
 
           ImGui::Text("Edit Point Light");
-          ImGui::SliderFloat3("Light Pos", &lightPos[0], 0.0f, 10.0f);
+          ImGui::SliderFloat3("Light Pos", &lightPos[0], 0.0f, 50.0f);
           ImGui::End();
           
           ImGui::Render();
