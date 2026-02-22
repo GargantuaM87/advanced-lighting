@@ -22,5 +22,5 @@ void main()
     vs_out.vTexCoords = aTexCoords;
     vs_out.vFragPosLightSpace = lightSpaceMatrix * vec4(vs_out.vFragPos, 1.0);
     //gl_Position = projection * view * vec4(vs_out.vFragPos, 1.0);
-    gl_Position = projection * view * model * vec4(aPos, 1.0);
+    gl_Position = projection * view * vec4(vs_out.vFragPos, 1.0);
 }

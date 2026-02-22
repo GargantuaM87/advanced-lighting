@@ -8,21 +8,21 @@ in VS_OUT {
     vec4 vFragPosLightSpace;
 } fs_in;
 
-uniform sampler2D texture_diffuse1;
 uniform sampler2D shadowMap;
 
 uniform vec3 lightPos;
 uniform vec3 viewPos;
+uniform vec3 objColor;
 
 float ShadowCalculation(vec4 fragPosLightSpace, float bias);
 
 void main() 
 {
-    vec3 color = texture(texture_diffuse1, fs_in.vTexCoords).rgb;
+    vec3 color = objColor;
     vec3 normal = normalize(fs_in.vNormal);
     vec3 lightColor = vec3(1.0);
     // ambient
-    vec3 ambient =  0.15 * lightColor;
+    vec3 ambient = 0.15 * lightColor;
     // diffuse
     vec3 lightDir =  normalize(lightPos - fs_in.vFragPos);
     float diff = max(dot(lightDir, normal), 0.0);

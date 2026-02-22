@@ -149,13 +149,10 @@ int main(int, char **)
      ImGui_ImplOpenGL3_Init("#version 330");
      
      glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-     depthShader.Activate();
-     depthShader.SetToInt("shadowMap", 1);
 
      // Main Render Loop
      while (!glfwWindowShouldClose(window))
      {
-          glEnable(GL_DEPTH_TEST);
           glClearColor(0.0f, 0.0f, 0.15f, 1.0f);
           glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -171,70 +168,97 @@ int main(int, char **)
                camera.Inputs(window);
           
           camera.Matrix(45, 0.1, 100);
-          glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
+         
           //--------------SHADERS & MODEL DRAWING--------------
-          glm::vec3 lightInvDir = glm::vec3(0.5f, 2, 2);
 
           // MVP from light's point of view
           glm::mat4 depthProjection = glm::ortho<float>(-10, 10, -10, 10, -10, 20);
-          glm::mat4 depthView = glm::lookAt(lightInvDir, glm::vec3(0), glm::vec3(0, 1, 0));
-          glm::mat4 depthModel = glm::mat4(1.0f);
-          glm::mat4 depthMVP = depthProjection * depthView * depthModel;
+          glm::mat4 depthView = glm::lookAt(lightPos, glm::vec3(0), glm::vec3(0, 1, 0));
+          glm::mat4 model = glm::mat4(1.0f);
+          glm::mat4 depthMVP = depthProjection * depthView;
           depthShader.Activate();
           depthShader.SetToMat4("lightSpaceMatrix", depthMVP);
-          glBindFramebuffer(GL_FRAMEBUFFER, 0);
-          defaultShader.Activate();
-          glm::mat4 view = camera.GetViewMatrix();
-          glm::mat4 proj = camera.GetProjMatrix();
-
-          defaultShader.SetToMat4("view", view);
-          defaultShader.SetToMat4("proj", proj);
-          // Light uniforms
-          defaultShader.SetToVec3("u_dirLight.direction", &dirLightPos[0]);
-          defaultShader.SetToVec3("u_dirLight.ambient", &glm::vec3(0.2)[0]);
-          defaultShader.SetToVec3("u_dirLight.diffuse", &glm::vec3(0.8)[0]);
-          defaultShader.SetToVec3("u_dirLight.specular", &glm::vec3(0.1)[0]);
-          defaultShader.SetToVec3("u_pointLights.position", &lightPos[0]);
-          defaultShader.SetToVec3("u_pointLights.ambient", &glm::vec3(0.8f)[0]);
-          defaultShader.SetToVec3("u_pointLights.diffuse", &glm::vec3(0.8f)[0]);
-          defaultShader.SetToVec3("u_pointLights.specular", &glm::vec3(0.09f)[0]);
-          defaultShader.SetToFloat("u_pointLights.constant", 1.0f);
-          defaultShader.SetToFloat("u_pointLights.linear", 0.09f);
-          defaultShader.SetToFloat("u_pointLights.quadratic", 0.032f);
-          defaultShader.SetToVec3("u_viewPos", &camera.Position[0]);
-          // Material Uniforms
-          defaultShader.SetToVec3("u_mat.objectColor", &glm::vec3(0.8f)[0]);
-          defaultShader.SetToFloat("u_mat.shininess", 32.0f);
+          // ----------FIRST PASS (DEPTH)----------
+          glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
+          glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
+          glClear(GL_DEPTH_BUFFER_BIT);
           // Drawing Models
           // Plane
-          glm::mat4 model = glm::mat4(1.0f);
           model = glm::scale(model, glm::vec3(5.0));
-          defaultShader.SetToMat4("model", model);
-          plane.Draw(defaultShader);
+          depthShader.SetToMat4("model", model);
+          plane.Draw(depthShader);
           // Cube
           model = glm::mat4(1.0f);
           model = glm::translate(model, glm::vec3(0.0f, 2.0f, 2.0f));
           model = glm::scale(model, glm::vec3(0.8));
-          defaultShader.SetToMat4("model", model);
-          cube.Draw(defaultShader);
+          depthShader.SetToMat4("model", model);
+          cube.Draw(depthShader);
           // Torus
           model = glm::mat4(1.0f);
           model = glm::translate(model, glm::vec3(-0.5f, 0.5, -2.0f));
-          defaultShader.SetToMat4("model", model);
-          torus.Draw(defaultShader);
+          depthShader.SetToMat4("model", model);
+          torus.Draw(depthShader);
           // Sphere
           model = glm::mat4(1.0f);
           model = glm::translate(model, glm::vec3(0.0f, 2.0f, -1.0f));
-          defaultShader.SetToMat4("model", model);
-          sphere.Draw(defaultShader);
+          depthShader.SetToMat4("model", model);
+          sphere.Draw(depthShader);
+          glBindFramebuffer(GL_FRAMEBUFFER, 0);
+          // Viewport Reset
+          glViewport(0, 0, width, height);
+          glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+          // ----------SECOND PASS (SHADOWS)----------
+          // Vertex Uniforms
+          model = glm::mat4(1.0f);
+          glm::mat4 view = camera.GetViewMatrix();
+          glm::mat4 proj = camera.GetProjMatrix();
+          shadowShader.Activate();
+          shadowShader.SetToMat4("lightSpaceMatrix", depthMVP);
+          shadowShader.SetToMat4("projection", proj);
+          shadowShader.SetToMat4("view", view);
+          // Fragment Uniforms
+          glBindTexture(GL_TEXTURE_2D, depthMap);
+          shadowShader.SetToInt("shadowMap", 0);
+          shadowShader.SetToVec3("lightPos", &lightPos[0]);
+          shadowShader.SetToVec3("viewPos", &camera.Position[0]);
+          shadowShader.SetToVec3("objColor", &glm::vec3(0.9f)[0]);
+          // Drawing Objects Again
+          // Plane
+          model = glm::scale(model, glm::vec3(5.0));
+          shadowShader.SetToMat4("model", model);
+          plane.Draw(shadowShader);
+          // Cube
+          model = glm::mat4(1.0f);
+          model = glm::translate(model, glm::vec3(0.0f, 2.0f, 2.0f));
+          model = glm::scale(model, glm::vec3(0.8));
+          shadowShader.SetToMat4("model", model);
+          cube.Draw(depthShader);
+          // Torus
+          model = glm::mat4(1.0f);
+          model = glm::translate(model, glm::vec3(-0.5f, 0.5, -2.0f));
+          shadowShader.SetToMat4("model", model);
+          torus.Draw(depthShader);
+          // Sphere
+          model = glm::mat4(1.0f);
+          model = glm::translate(model, glm::vec3(0.0f, 2.0f, -1.0f));
+          shadowShader.SetToMat4("model", model);
+          sphere.Draw(depthShader);
+          // Light Position Model
+          model = glm::mat4(1.0f);
+          model = glm::translate(model, lightPos);
+          model = glm::scale(model, glm::vec3(0.2f));
+          shadowShader.SetToMat4("model", model);
+          sphere.Draw(shadowShader);
+
           //--------------END OF SHADERS & MODEL DRAWING--------------
 
           // ---------DEPTH DEBUGGING---------
           framebufferShader.Activate();
           glBindTexture(GL_TEXTURE_2D, depthMap);
-          quadVAO.Bind();
+          /*quadVAO.Bind();
           glDrawArrays(GL_TRIANGLES, 0, 6);
-          quadVAO.Unbind();
+          quadVAO.Unbind();*/
+          // ---------END OF DEPTH DEBUGGING---------
 
           // ---------IMGUI---------
           ImGui::Begin("OpenGL Settings Panel");
@@ -248,11 +272,12 @@ int main(int, char **)
           ImGui::Separator();
 
           ImGui::Text("Edit Point Light");
-          ImGui::SliderFloat3("Light Pos", &lightPos[0], 0.0f, 50.0f);
+          ImGui::SliderFloat3("Light Pos", &lightPos[0], 0.0f, 15.0f);
           ImGui::End();
           
           ImGui::Render();
           ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+          // ---------END OF IMGUI---------
 
           // Swap back buffer with front buffer
           glfwSwapBuffers(window);
