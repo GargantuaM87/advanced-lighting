@@ -54,6 +54,7 @@ int main(int, char **)
           1.0f,  1.0f,  1.0f, 1.0f
      };
      GLFWwindow *window;
+     glfwWindowHint(GLFW_SAMPLES, 4);
 
      if (!glfwInit())
      {
@@ -76,7 +77,8 @@ int main(int, char **)
      // The files are compiled to an intermediary language then translated into specific instructions for the GPU
      Shader defaultShader("../assets/shaders/default.vert", "../assets/shaders/default.frag");
      Shader modelShader("../assets/shaders/model.vert", "../assets/shaders/model.frag");
-     Shader depthShader("../assets/shaders/simpleDepthShader.vert", "../assets/shaders/simpleDepthShader.frag");
+     Shader depthShader("../assets/shaders/depth.vert", "../assets/shaders/depth.frag");
+     depthShader.LinkGeometry("../assets/shaders/depth.geom");
      Shader framebufferShader("../assets/shaders/framebuffer.vert", "../assets/shaders/framebuffer.frag");
      Shader shadowShader("../assets/shaders/shadow.vert", "../assets/shaders/shadow.frag");
      // models
@@ -103,20 +105,39 @@ int main(int, char **)
      quadVAO.LinkAttrib(quadVBO, 1, 2, GL_FLOAT, 4 * sizeof(float), (void*)(2 * sizeof(float)));
      quadVAO.Unbind();
 
-     // depth map
+     //-----------IMAGE VARIABLES-----------
      unsigned int depthMapFBO;
      glGenFramebuffers(1, &depthMapFBO);
      // 2D texture for framebuffer depth buffer
-     const unsigned int SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
+     const unsigned int SHADOW_WIDTH = 2048, SHADOW_HEIGHT = 2048;
 
-     unsigned int depthMap;
+     unsigned int depthCubemap;
+     glGenTextures(1, &depthCubemap);
+     glBindTexture(GL_TEXTURE_CUBE_MAP, depthCubemap);
+     for(unsigned int i = 0; i < 6; ++i)
+          glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_DEPTH_COMPONENT, SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+     glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
+     glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthCubemap, 0);
+     glDrawBuffer(GL_NONE);
+     glReadBuffer(GL_NONE);
+     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    /*unsigned int depthMap;
      glGenTextures(1, &depthMap);
      glBindTexture(GL_TEXTURE_2D, depthMap);
      glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE); 
-     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);  
+     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER); 
+     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+     float borderColor[] = {1.0f, 1.0f, 1.0f, 1.0f};
+     glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);  
 
      // attatch to framebuffer's depth buffer
      glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO); // only need depth info when rendering the scene from light's perspective
@@ -126,10 +147,13 @@ int main(int, char **)
      
      if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
           return -1;
-     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+     glBindFramebuffer(GL_FRAMEBUFFER, 0);*/
+      //-----------END OF IMAGE VARIABLES-----------
 
      glEnable(GL_DEPTH_TEST); // Allows for depth comparison and updates the depth buffer
-     //glEnable(GL_CULL_FACE);
+     glEnable(GL_MULTISAMPLE);
+     glEnable(GL_CULL_FACE);
+    
 
      // -----------RENDER LOOP VARIABLES-----------
      Camera camera(width, height, glm::vec3(0.0f, 0.0f, 2.0f));
@@ -172,16 +196,29 @@ int main(int, char **)
           //--------------SHADERS & MODEL DRAWING--------------
 
           // MVP from light's point of view
-          glm::mat4 depthProjection = glm::ortho<float>(-10, 10, -10, 10, -10, 20);
-          glm::mat4 depthView = glm::lookAt(lightPos, glm::vec3(0), glm::vec3(0, 1, 0));
+          float aspect = (float)SHADOW_WIDTH/(float)SHADOW_HEIGHT;
+          float near = 1.0f;
+          float far = 25.0f;
+          glm::mat4 shadowProj = glm::perspective(glm::radians(90.0f), aspect, near, far);
+          std::vector<glm::mat4> shadowTransforms;
+          shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3( 1.0, 0.0, 0.0), glm::vec3(0.0,-1.0, 0.0)));
+          shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(-1.0, 0.0, 0.0), glm::vec3(0.0,-1.0, 0.0)));
+          shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3( 0.0, 1.0, 0.0), glm::vec3(0.0, 0.0, 1.0)));
+          shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3( 0.0,-1.0, 0.0), glm::vec3(0.0, 0.0,-1.0)));
+          shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3( 0.0, 0.0, 1.0), glm::vec3(0.0,-1.0, 0.0)));
+          shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3( 0.0, 0.0,-1.0), glm::vec3(0.0,-1.0, 0.0)));
           glm::mat4 model = glm::mat4(1.0f);
-          glm::mat4 depthMVP = depthProjection * depthView;
+          
           depthShader.Activate();
-          depthShader.SetToMat4("lightSpaceMatrix", depthMVP);
           // ----------FIRST PASS (DEPTH)----------
           glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
           glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
           glClear(GL_DEPTH_BUFFER_BIT);
+          glCullFace(GL_BACK);
+          for(unsigned int i = 0; i < 6; ++i)
+               depthShader.SetToMat4(&("shadowMatrices[" + std::to_string(i) + "]")[0], shadowTransforms[i]);
+          depthShader.SetToFloat("far_plane", far);
+          depthShader.SetToVec3("lightPos", &lightPos[0]);
           // Drawing Models
           // Plane
           model = glm::scale(model, glm::vec3(5.0));
@@ -213,15 +250,16 @@ int main(int, char **)
           glm::mat4 view = camera.GetViewMatrix();
           glm::mat4 proj = camera.GetProjMatrix();
           shadowShader.Activate();
-          shadowShader.SetToMat4("lightSpaceMatrix", depthMVP);
           shadowShader.SetToMat4("projection", proj);
           shadowShader.SetToMat4("view", view);
           // Fragment Uniforms
-          glBindTexture(GL_TEXTURE_2D, depthMap);
-          shadowShader.SetToInt("shadowMap", 0);
-          shadowShader.SetToVec3("lightPos", &lightPos[0]);
+          glBindTexture(GL_TEXTURE_CUBE_MAP, depthCubemap);
+          glActiveTexture(GL_TEXTURE0);
+          shadowShader.SetToInt("depthMap", 0);
+          shadowShader.SetToVec3("lightPos",&lightPos[0]);
           shadowShader.SetToVec3("viewPos", &camera.Position[0]);
           shadowShader.SetToVec3("objColor", &glm::vec3(0.9f)[0]);
+          shadowShader.SetToFloat("far_plane", far);
           // Drawing Objects Again
           // Plane
           model = glm::scale(model, glm::vec3(5.0));
@@ -249,12 +287,11 @@ int main(int, char **)
           model = glm::scale(model, glm::vec3(0.2f));
           shadowShader.SetToMat4("model", model);
           sphere.Draw(shadowShader);
-
+          glCullFace(GL_FRONT);
           //--------------END OF SHADERS & MODEL DRAWING--------------
 
           // ---------DEPTH DEBUGGING---------
           framebufferShader.Activate();
-          glBindTexture(GL_TEXTURE_2D, depthMap);
           /*quadVAO.Bind();
           glDrawArrays(GL_TRIANGLES, 0, 6);
           quadVAO.Unbind();*/
@@ -272,7 +309,7 @@ int main(int, char **)
           ImGui::Separator();
 
           ImGui::Text("Edit Point Light");
-          ImGui::SliderFloat3("Light Pos", &lightPos[0], 0.0f, 15.0f);
+          ImGui::SliderFloat3("Light Pos", &lightPos[0], -10.0f, 15.0f);
           ImGui::End();
           
           ImGui::Render();

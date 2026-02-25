@@ -46,6 +46,20 @@ Shader::Shader(const char* vertexFile, const char* fragmentFile)
    glDeleteShader(fragmentShader);
 }
 
+void Shader::LinkGeometry(const char* geometryFile) {
+    std::string geoCode = get_file_contents(geometryFile);
+    const char* geoSource = geoCode.c_str();
+
+    GLuint geoShader = glCreateShader(GL_GEOMETRY_SHADER);
+    glShaderSource(geoShader, 1, &geoSource, NULL);
+    glCompileShader(geoShader);
+
+    glAttachShader(ID, geoShader);
+    glLinkProgram(ID);
+
+    glDeleteShader(geoShader);
+}
+
 void Shader::SetToVec2(const char* uniform, const GLfloat* value) {
    GLuint uniformLoc = glGetUniformLocation(ID, uniform);
    glUniform2fv(uniformLoc, 1, &value[0]);

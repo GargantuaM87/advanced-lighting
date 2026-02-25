@@ -16,6 +16,8 @@ class Shader {
         GLuint ID;
         Shader(const char* vertexFile, const char* fragmentFile);
 
+        void LinkGeometry(const char* geometryFile);
+
         void SetToVec2(const char* uniform, const GLfloat* value);
 
         void SetToVec3(const char* uniform, const GLfloat* value);
