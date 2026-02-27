@@ -30,18 +30,6 @@ void framebuffer_size_callback(GLFWwindow *window, int width, int height)
 
 int main(int, char **)
 {
-     // Storing our values of each vertex in our coordinate space
-
-     float planeVertices[] = {
-      // positions            // normals         // texcoords
-         25.0f, -0.5f,  25.0f,  0.0f, 1.0f, 0.0f,  25.0f,  0.0f,
-        -25.0f, -0.5f,  25.0f,  0.0f, 1.0f, 0.0f,   0.0f,  0.0f,
-        -25.0f, -0.5f, -25.0f,  0.0f, 1.0f, 0.0f,   0.0f, 25.0f,
-
-         25.0f, -0.5f,  25.0f,  0.0f, 1.0f, 0.0f,  25.0f,  0.0f,
-        -25.0f, -0.5f, -25.0f,  0.0f, 1.0f, 0.0f,   0.0f, 25.0f,
-         25.0f, -0.5f, -25.0f,  0.0f, 1.0f, 0.0f,  25.0f, 25.0f
-    };
 
      float quadVertices[] = {
           // positions     // texCoords
@@ -86,17 +74,9 @@ int main(int, char **)
      Model plane("../assets/plane.obj");
      Model torus("../assets/torus.obj");
      Model sphere("../assets/sphere/source/sphere.obj");
+     Model duffleBag("../assets/bag/bag.obj");
      // textures
      TextureUnit woodTexture("../assets/textures/woodTex.jpeg", GL_TEXTURE_2D, GL_TEXTURE0, GL_RGBA, GL_UNSIGNED_BYTE);
-
-     // plane geometry
-     VAO planeVAO;
-     VBO planeVBO(planeVertices, sizeof(planeVertices));
-     planeVAO.Bind();
-     planeVAO.LinkAttrib(planeVBO, 0, 3, GL_FLOAT, 8 * sizeof(float), (void*)(0));
-     planeVAO.LinkAttrib(planeVBO, 1, 3, GL_FLOAT, 8 * sizeof(float), (void*)(3 * sizeof(float)));
-     planeVAO.LinkAttrib(planeVBO, 2, 2, GL_FLOAT, 8 * sizeof(float), (void*)(6 * sizeof(float)));
-     planeVAO.Unbind();
      // quad geometry
      VAO quadVAO;
      VBO quadVBO(quadVertices, sizeof(quadVertices));
@@ -127,27 +107,6 @@ int main(int, char **)
      glDrawBuffer(GL_NONE);
      glReadBuffer(GL_NONE);
      glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-    /*unsigned int depthMap;
-     glGenTextures(1, &depthMap);
-     glBindTexture(GL_TEXTURE_2D, depthMap);
-     glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
-     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER); 
-     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-     float borderColor[] = {1.0f, 1.0f, 1.0f, 1.0f};
-     glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);  
-
-     // attatch to framebuffer's depth buffer
-     glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO); // only need depth info when rendering the scene from light's perspective
-     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMap, 0);
-     glDrawBuffer(GL_NONE); // framebuffer obj is not complete without a color buffer
-     glReadBuffer(GL_NONE); // so we explicitely set these states so OpenGL knows we're not going to render color data
-     
-     if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-          return -1;
-     glBindFramebuffer(GL_FRAMEBUFFER, 0);*/
       //-----------END OF IMAGE VARIABLES-----------
 
      glEnable(GL_DEPTH_TEST); // Allows for depth comparison and updates the depth buffer
@@ -287,6 +246,19 @@ int main(int, char **)
           model = glm::scale(model, glm::vec3(0.2f));
           shadowShader.SetToMat4("model", model);
           sphere.Draw(shadowShader);
+          //------------NORMAL MAPPING------------
+          modelShader.Activate();
+          modelShader.SetToMat4("view", view);
+          modelShader.SetToMat4("proj", proj);
+          modelShader.SetToVec3("lightPos", &lightPos[0]);
+          modelShader.SetToVec3("viewPos", &camera.Position[0]);
+
+          model = glm::mat4(1.0f);
+          model = glm::translate(model, glm::vec3(7.5f, 5.0f, 0.0f));
+          model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+          model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+          modelShader.SetToMat4("model", model);
+          duffleBag.Draw(modelShader);
           glCullFace(GL_FRONT);
           //--------------END OF SHADERS & MODEL DRAWING--------------
 
@@ -309,7 +281,7 @@ int main(int, char **)
           ImGui::Separator();
 
           ImGui::Text("Edit Point Light");
-          ImGui::SliderFloat3("Light Pos", &lightPos[0], -10.0f, 15.0f);
+          ImGui::SliderFloat3("Light Pos", &lightPos[0], -20.0f, 20.0f);
           ImGui::End();
           
           ImGui::Render();
@@ -328,6 +300,8 @@ int main(int, char **)
 
      // ------------OBJECT DELETION------------
      defaultShader.Delete();
+     depthShader.Delete();
+     shadowShader.Delete();
 
      glfwTerminate();
      return 0;

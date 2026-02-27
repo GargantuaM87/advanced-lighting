@@ -27,7 +27,7 @@ void Mesh::Draw(Shader &shader) {
         else if(name == "texture_height")
             number = std::to_string(heightNr++);
         
-            shader.SetToInt((name + number).c_str(), i);
+            shader.SetToInt(("u_mat." + name + number).c_str(), i);
             glBindTexture(GL_TEXTURE_2D, textures[i].id);
     }
     glActiveTexture(GL_TEXTURE0);
