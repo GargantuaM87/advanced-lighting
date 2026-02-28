@@ -80,6 +80,8 @@ int main(int, char **)
      brickDiffuse.texUnit(modelShader, "u_mat.texture_diffuse1", 0);
      TextureUnit brickNorm("../assets/textures/brickNormal.jpg", GL_TEXTURE_2D, GL_TEXTURE1, GL_RGBA, GL_UNSIGNED_BYTE);
      brickNorm.texUnit(modelShader, "u_mat.texture_normal1", 1);
+     TextureUnit brickHeight("../assets/textures/brickDisp.jpg", GL_TEXTURE_2D, GL_TEXTURE2, GL_RGBA, GL_UNSIGNED_BYTE);
+     brickHeight.texUnit(modelShader, "u_mat.texture_depth1", 2);
      // quad geometry
      VAO quadVAO;
      VBO quadVBO(quadVertices, sizeof(quadVertices));
@@ -197,7 +199,8 @@ int main(int, char **)
 
      float deltaTime = 0.0f;
      float lastFrame = 0.0f;
-     //-----------RENDER LOOP VARIABLES-----------
+     float heightScale = 0.1f;
+     //-----------END OF RENDER LOOP VARIABLES-----------
      IMGUI_CHECKVERSION();
      ImGui::CreateContext();
      ImGuiIO &io = ImGui::GetIO();
@@ -327,6 +330,7 @@ int main(int, char **)
           modelShader.SetToMat4("proj", proj);
           modelShader.SetToVec3("lightPos", &lightPos[0]);
           modelShader.SetToVec3("viewPos", &camera.Position[0]);
+          modelShader.SetToFloat("heightScale", heightScale);
 
           model = glm::mat4(1.0f);
           model = glm::translate(model, glm::vec3(7.5f, 5.0f, 0.0f));
@@ -337,6 +341,8 @@ int main(int, char **)
           brickDiffuse.Bind();
           glActiveTexture(GL_TEXTURE1);
           brickNorm.Bind();
+          glActiveTexture(GL_TEXTURE2);
+          brickHeight.Bind();
           glDrawArrays(GL_TRIANGLES, 0, 6);
           planeVAO.Unbind();
           glCullFace(GL_FRONT);
@@ -352,6 +358,7 @@ int main(int, char **)
           // ---------IMGUI---------
           ImGui::Begin("OpenGL Settings Panel");
           ImGui::Text("Tweaks");
+          ImGui::DragFloat("Height Scale", &heightScale, 0.1f, 0.0f, 1.0f);
 
           ImGui::Separator();
 
